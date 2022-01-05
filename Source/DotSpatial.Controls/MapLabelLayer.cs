@@ -1047,10 +1047,10 @@ namespace DotSpatial.Controls
                     }
                 }
 
-                for (int i = 0; i < catFeatures.Count; i++)
+                foreach (IFeature feature in catFeatures)
                 {
-                    if (!FeatureLayer.DrawnStates[i].Visible) continue;
-                    drawFeature(catFeatures[i]);
+                    if (!drawStates[feature].Visible) continue;
+                    drawFeature(feature);
                 }
             }
 
