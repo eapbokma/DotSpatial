@@ -52,17 +52,33 @@ namespace DotSpatial.Controls
 
         #endregion
 
+        [Flags]
+        public enum DefaultTools
+        {
+            None = 0,
+            AddRemoveLayer = 1,
+            Pan = 2,
+            ZoomInOut = 4,
+            ZoomToExtent = 8,
+            ZoomToPreviousNext = 16,
+            ZoomToCoordinate = 32,
+            ZoomToLayer = 64,
+            Select = 128,
+            Deselect = 256,
+            Identify = 512,
+            All = 1023,
+        }
         #region Methods
 
         /// <summary>
         /// Adds the default tools to the given header.
         /// </summary>
         /// <param name="header">IHeaderControl the default tools should be added to.</param>
-        public void Initialize(IHeaderControl header)
+        public void Initialize(IHeaderControl header, DefaultTools defaultTools = DefaultTools.All)
         {
             if (header == null) throw new ArgumentNullException(nameof(header));
 
-            AddItems(header);
+            AddItems(header, defaultTools);
             OnAppMapChanged(new MapChangedEventArgs(null, App.Map));
         }
 
@@ -71,7 +87,7 @@ namespace DotSpatial.Controls
             MessageBox.Show(string.Format(Msg.FailedToWriteTheSpecifiedMapFile, fileName), Msg.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private void AddItems(IHeaderControl header)
+        private void AddItems(IHeaderControl header, DefaultTools toolsToShow)
         {
             // Root items
             header.Add(new RootItem(FileMenuKey, MessageStrings.File)
@@ -143,110 +159,137 @@ namespace DotSpatial.Controls
                 SortOrder = 5000,
             });
 
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Add_Layer, AddLayerClick)
+            if (toolsToShow.HasFlag(DefaultTools.AddRemoveLayer))
             {
-                GroupCaption = Msg.Layers_Group,
-                SmallImage = Images.layer_add_16x16,
-                LargeImage = Images.layer_add_32x32
-            });
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Remove_Layer, RemoveLayerClick)
-            {
-                GroupCaption = Msg.Layers_Group,
-                SmallImage = Images.layer_remove_16x16,
-                LargeImage = Images.layer_remove_32x32
-            });
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Add_Layer, AddLayerClick)
+                {
+                    GroupCaption = Msg.Layers_Group,
+                    SmallImage = Images.layer_add_16x16,
+                    LargeImage = Images.layer_add_32x32
+                });
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Remove_Layer, RemoveLayerClick)
+                {
+                    GroupCaption = Msg.Layers_Group,
+                    SmallImage = Images.layer_remove_16x16,
+                    LargeImage = Images.layer_remove_32x32
+                });
+            }
 
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Pan, PanToolClick)
+            if (toolsToShow.HasFlag(DefaultTools.Pan))
             {
-                Key = Msg.Pan,
-                GroupCaption = Msg.View_Group,
-                SmallImage = Images.hand_16x16,
-                LargeImage = Images.hand_32x32,
-                ToggleGroupKey = Msg.Map_Tools_Group
-            });
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Pan, PanToolClick)
+                {
+                    Key = Msg.Pan,
+                    GroupCaption = Msg.View_Group,
+                    SmallImage = Images.hand_16x16,
+                    LargeImage = Images.hand_32x32,
+                    ToggleGroupKey = Msg.Map_Tools_Group
+                });
+            }
 
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_In, ZoomInClick)
+            if (toolsToShow.HasFlag(DefaultTools.ZoomInOut))
             {
-                Key = Msg.Zoom_In,
-                GroupCaption = Msg.Zoom_Group,
-                ToolTipText = Msg.Zoom_In_Tooltip,
-                SmallImage = Images.zoom_in_16x16,
-                LargeImage = Images.zoom_in_32x32,
-                ToggleGroupKey = Msg.Map_Tools_Group
-            });
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_Out, ZoomOutClick)
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_In, ZoomInClick)
+                {
+                    Key = Msg.Zoom_In,
+                    GroupCaption = Msg.Zoom_Group,
+                    ToolTipText = Msg.Zoom_In_Tooltip,
+                    SmallImage = Images.zoom_in_16x16,
+                    LargeImage = Images.zoom_in_32x32,
+                    ToggleGroupKey = Msg.Map_Tools_Group
+                });
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_Out, ZoomOutClick)
+                {
+                    Key = Msg.Zoom_Out,
+                    GroupCaption = Msg.Zoom_Group,
+                    ToolTipText = Msg.Zoom_Out_Tooltip,
+                    SmallImage = Images.zoom_out_16x16,
+                    LargeImage = Images.zoom_out_32x32,
+                    ToggleGroupKey = Msg.Map_Tools_Group
+                });
+            }
+            if (toolsToShow.HasFlag(DefaultTools.ZoomToExtent))
             {
-                Key = Msg.Zoom_Out,
-                GroupCaption = Msg.Zoom_Group,
-                ToolTipText = Msg.Zoom_Out_Tooltip,
-                SmallImage = Images.zoom_out_16x16,
-                LargeImage = Images.zoom_out_32x32,
-                ToggleGroupKey = Msg.Map_Tools_Group
-            });
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_To_Extents, ZoomToMaxExtentsClick)
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_To_Extents, ZoomToMaxExtentsClick)
+                {
+                    GroupCaption = Msg.Zoom_Group,
+                    ToolTipText = Msg.Zoom_To_Extents_Tooltip,
+                    SmallImage = Images.zoom_extend_16x16,
+                    LargeImage = Images.zoom_extend_32x32
+                });
+            }
+            if (toolsToShow.HasFlag(DefaultTools.ZoomToPreviousNext))
             {
-                GroupCaption = Msg.Zoom_Group,
-                ToolTipText = Msg.Zoom_To_Extents_Tooltip,
-                SmallImage = Images.zoom_extend_16x16,
-                LargeImage = Images.zoom_extend_32x32
-            });
-            _zoomPrevious = new SimpleActionItem(HomeMenuKey, Msg.Zoom_Previous, ZoomPreviousClick)
+                _zoomPrevious = new SimpleActionItem(HomeMenuKey, Msg.Zoom_Previous, ZoomPreviousClick)
+                {
+                    GroupCaption = Msg.Zoom_Group,
+                    ToolTipText = Msg.Zoom_Previous_Tooltip,
+                    SmallImage = Images.zoom_to_previous_16,
+                    LargeImage = Images.zoom_to_previous,
+                    Enabled = false
+                };
+                header.Add(_zoomPrevious);
+                _zoomNext = new SimpleActionItem(HomeMenuKey, Msg.Zoom_Next, ZoomNextClick)
+                {
+                    GroupCaption = Msg.Zoom_Group,
+                    ToolTipText = Msg.Zoom_Next_Tooltip,
+                    SmallImage = Images.zoom_to_next_16,
+                    LargeImage = Images.zoom_to_next,
+                    Enabled = false
+                };
+                header.Add(_zoomNext);
+            }
+            if (toolsToShow.HasFlag(DefaultTools.ZoomToLayer))
             {
-                GroupCaption = Msg.Zoom_Group,
-                ToolTipText = Msg.Zoom_Previous_Tooltip,
-                SmallImage = Images.zoom_to_previous_16,
-                LargeImage = Images.zoom_to_previous,
-                Enabled = false
-            };
-            header.Add(_zoomPrevious);
-            _zoomNext = new SimpleActionItem(HomeMenuKey, Msg.Zoom_Next, ZoomNextClick)
-            {
-                GroupCaption = Msg.Zoom_Group,
-                ToolTipText = Msg.Zoom_Next_Tooltip,
-                SmallImage = Images.zoom_to_next_16,
-                LargeImage = Images.zoom_to_next,
-                Enabled = false
-            };
-            header.Add(_zoomNext);
-            _zoomToLayer = new SimpleActionItem(HomeMenuKey, Msg.Zoom_To_Layer, ZoomToLayerClick)
-            {
-                GroupCaption = Msg.Zoom_Group,
-                SmallImage = Images.zoom_layer_16x16,
-                LargeImage = Images.zoom_layer_32x32
-            };
-            header.Add(_zoomToLayer);
+                _zoomToLayer = new SimpleActionItem(HomeMenuKey, Msg.Zoom_To_Layer, ZoomToLayerClick)
+                {
+                    GroupCaption = Msg.Zoom_Group,
+                    SmallImage = Images.zoom_layer_16x16,
+                    LargeImage = Images.zoom_layer_32x32
+                };
+                header.Add(_zoomToLayer);
+            }
 
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_To_Coordinates, CoordinatesClick)
+            if (toolsToShow.HasFlag(DefaultTools.ZoomToCoordinate))
             {
-                GroupCaption = Msg.Zoom_Group,
-                SmallImage = Images.zoom_coordinate_16x16,
-                LargeImage = Images.zoom_coordinate_32x32
-            });
-
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Select, SelectionToolClick)
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Zoom_To_Coordinates, CoordinatesClick)
+                {
+                    GroupCaption = Msg.Zoom_Group,
+                    SmallImage = Images.zoom_coordinate_16x16,
+                    LargeImage = Images.zoom_coordinate_32x32
+                });
+            }
+            if (toolsToShow.HasFlag(DefaultTools.Select))
             {
-                Key = Msg.Select,
-                GroupCaption = Msg.Map_Tools_Group,
-                SmallImage = Images.select_16x16,
-                LargeImage = Images.select_32x32,
-                ToggleGroupKey = Msg.Map_Tools_Group
-            });
-
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Deselect, DeselectAllClick)
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Select, SelectionToolClick)
+                {
+                    Key = Msg.Select,
+                    GroupCaption = Msg.Map_Tools_Group,
+                    SmallImage = Images.select_16x16,
+                    LargeImage = Images.select_32x32,
+                    ToggleGroupKey = Msg.Map_Tools_Group
+                });
+            }
+            if (toolsToShow.HasFlag(DefaultTools.Deselect))
             {
-                Key = Msg.Deselect,
-                GroupCaption = Msg.Map_Tools_Group,
-                SmallImage = Images.deselect_16x16,
-                LargeImage = Images.deselect_32x32
-            });
-
-            header.Add(new SimpleActionItem(HomeMenuKey, Msg.Identify, IdentifierToolClick)
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Deselect, DeselectAllClick)
+                {
+                    Key = Msg.Deselect,
+                    GroupCaption = Msg.Map_Tools_Group,
+                    SmallImage = Images.deselect_16x16,
+                    LargeImage = Images.deselect_32x32
+                });
+            }
+            if (toolsToShow.HasFlag(DefaultTools.Identify))
             {
-                GroupCaption = Msg.Map_Tools_Group,
-                SmallImage = Images.info_rhombus_16x16,
-                LargeImage = Images.info_rhombus_32x32,
-                ToggleGroupKey = Msg.Map_Tools_Group
-            });
+                header.Add(new SimpleActionItem(HomeMenuKey, Msg.Identify, IdentifierToolClick)
+                {
+                    GroupCaption = Msg.Map_Tools_Group,
+                    SmallImage = Images.info_rhombus_16x16,
+                    LargeImage = Images.info_rhombus_32x32,
+                    ToggleGroupKey = Msg.Map_Tools_Group
+                });
+            }
         }
 
         /// <summary>

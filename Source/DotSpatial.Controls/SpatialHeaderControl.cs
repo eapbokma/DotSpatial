@@ -120,6 +120,23 @@ namespace DotSpatial.Controls
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether or not to show buttons on the toolbar to add and remove layers.
+        /// </summary>
+        [Description("Gets or sets a value that determines whether or not to show buttons on the toolbar to add and remove layers.")]
+        public bool ShowAddRemoveLayerButtons { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether or not to show a button on the toolbar to enable feature selection.
+        /// </summary>
+        [Description("Gets or sets a value that determines whether or not to show a button on the toolbar to enable feature selection.")]
+        public bool ShowSelectTool { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether or not to show a button on the toolbar to deselect all features.
+        /// </summary>
+        [Description("Gets or sets a value that determines whether or not to show a button on the toolbar to deselect all features.")]
+        public bool ShowDeselectTool { get; set; } = true;
         #endregion
 
         #region Methods
@@ -181,7 +198,16 @@ namespace DotSpatial.Controls
             {
                 _menuBar.IgnoreToolstripPositionSaving = DesignMode;
                 _menuBar.Initialize(ToolbarsContainer, MenuStrip);
-                new DefaultMenuBars(ApplicationManager).Initialize(ApplicationManager.HeaderControl);
+
+                DefaultMenuBars.DefaultTools defaultTools = DefaultMenuBars.DefaultTools.All;
+                if (!ShowAddRemoveLayerButtons)
+                    defaultTools &= ~DefaultMenuBars.DefaultTools.AddRemoveLayer;
+                if (!ShowSelectTool)
+                    defaultTools &= ~DefaultMenuBars.DefaultTools.Select;
+                if (!ShowDeselectTool)
+                    defaultTools &= ~DefaultMenuBars.DefaultTools.Deselect;
+                
+                new DefaultMenuBars(ApplicationManager).Initialize(ApplicationManager.HeaderControl, defaultTools);
 
                 // load here in DesignMode, because _applicationManager.ExtensionsActivated doesn't get raised
                 if (DesignMode)
